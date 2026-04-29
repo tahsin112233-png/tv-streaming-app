@@ -1,70 +1,53 @@
-import { useState, useEffect } from 'react';
-import Link from 'next/link';
+import { useState } from 'react';
 import styles from '../styles/Home.module.css';
 
 export default function Home() {
   const [customUrl, setCustomUrl] = useState('');
   const [loading, setLoading] = useState(false);
-  const [mrgifyStats, setMrgifyStats] = useState(null);
 
-  useEffect(() => {
-    // Fetch Mrgify stats
-    fetchMrgifyStats();
-  }, []);
-
-  const fetchMrgifyStats = async () => {
-    try {
-      const res = await fetch('/api/fetchMrgify');
-      const data = await res.json();
-      if (data.success) {
-        setMrgifyStats(data);
-      }
-    } catch (err) {
-      console.log('Could not fetch Mrgify stats');
-    }
-  };
-
+  // Pre-loaded playlists (you add these manually)
   const playlists = [
     {
-      id: 'mrgify',
+      id: 1,
       name: '🇧🇩 Mrgify BDIX IPTV',
-      description: 'Best BDIX channels (Auto-updates every 10 min)',
-      icon: '⚡',
-      channels: mrgifyStats?.total || '...'
+      url: 'https://github.com/abusaeeidx/Mrgify-BDIX-IPTV/raw/main/playlist.m3u',
+      description: 'Best BDIX + Sports Channels'
     },
     {
-      id: 'sports',
-      name: '⚽ Global Sports',
-      description: 'International sports channels',
-      icon: '🏟️',
-      channels: '500+'
+      id: 2,
+      name: '⚽ Global Sports M3U',
+      url: 'https://raw.githubusercontent.com/iptv-org/iptv/master/categories/sports.m3u',
+      description: 'International Sports'
     },
     {
-      id: 'india',
+      id: 3,
       name: '🇮🇳 India Channels',
-      description: 'Star Sports, Cricket HD, Sony',
-      icon: '🎬',
-      channels: '300+'
+      url: 'https://raw.githubusercontent.com/iptv-org/iptv/master/streams/in.m3u',
+      description: 'Star Sports, Sony, Cricket'
     },
     {
-      id: 'bd',
-      name: '🇧🇩 Bangladesh',
-      description: 'Local BD channels',
-      icon: '📺',
-      channels: '100+'
+      id: 4,
+      name: '🎬 Entertainment',
+      url: 'https://raw.githubusercontent.com/iptv-org/iptv/master/streams/us.m3u',
+      description: 'Movies & Series'
     }
   ];
 
-  const handleCustom = async () => {
-    if (!customUrl.trim()) return;
-    
-    setLoading(true);
+  const handlePlaylist = (url) => {
+    window.location.href = `/channels?m3uUrl=${encodeURIComponent(url)}&name=${encodeURIComponent(playlists.find(p => p.url === url)?.name || 'Playlist')}`;
+  };
+
+  const handleCustom = () => {
+    if (!customUrl.trim()) {
+      alert('Please paste a valid M3U URL');
+      return;
+    }
+
     try {
       new URL(customUrl);
-      window.location.href = `/channels?playlistUrl=${encodeURIComponent(customUrl)}&name=Custom%20Playlist`;
+      window.location.href = `/channels?m3uUrl=${encodeURIComponent(customUrl)}&name=Custom%20Playlist`;
     } catch (err) {
-      alert('Invalid URL!');
-      setLoading(false);
+      alert('Invalid URL! Make sure it starts with http:// or https://');
     }
   };
 
@@ -74,44 +57,48 @@ export default function Home() {
       <div className={styles.header}>
         <div className={styles.logo}>⚽📺</div>
         <h1>Sports TV Hub</h1>
-        <p>Watch live sports + BDIX channels worldwide</p>
+        <p>Watch Live Sports Worldwide</p>
       </div>
 
-      {/* Featured: Mrgify */}
-      <Link href="/channels?source=mrgify&name=Mrgify%20BDIX%20IPTV">
-        <a className={styles.featuredCard}>
-          <div className={styles.badge}>⚡ RECOMMENDED</div>
-          <h2>🇧🇩 Mrgify BDIX IPTV</h2>
-          <p>Best BDIX channels + Sports</p>
-          <span className={styles.update}>
-            {mrgifyStats ? `${mrgifyStats.total} Channels` : 'Loading...'} • Auto-updates every 10 min
-          </span>
-          <span className={styles.status}>✅ Online & Stable</span>
-        </a>
-      </Link>
+      {/* Featured Playlist */}
+      <div className={styles.featured}>
+        <button 
+          className={styles.featuredCard}
+          onClick={() => handlePlaylist(playlists[0].url)}
+        >
+          <div className={styles.badge}>⭐ BEST</div>
+          <h2>{playlists[0].name}</h2>
+          <p>{playlists[0].description}</p>
+          <span className={styles.click}>Tap to Browse →</span>
+        </button>
+      </div>
 
       {/* Other Playlists */}
       <h3 className={styles.sectionTitle}>Other Playlists</h3>
       <div className={styles.grid}>
         {playlists.slice(1).map((playlist) => (
-          <Link key={playlist.id} href={`/channels?playlistId=${playlist.id}&name=${encodeURIComponent(playlist.name)}`}>
-            <a className={styles.card}>
-              <div className={styles.icon}>{playlist.icon}</div>
-              <h3>{playlist.name}</h3>
-              <p>{playlist.description}</p>
-              <small className={styles.channelCount}>{playlist.channels} channels</small>
-            </a>
-          </Link>
+          <button
+            key={playlist.id}
+            className={styles.card}
+            onClick={() => handlePlaylist(playlist.url)}
+          >
+            <div className={styles.icon}>{playlist.name.split(' ')[0]}</div>
+            <h3>{playlist.name}</h3>
+            <p>{playlist.description}</p>
+          </button>
         ))}
       </div>
 
-      {/* Custom URL */}
+      {/* Custom M3U Input */}
       <div className={styles.customSection}>
-        <h2>➕ Add Custom M3U Playlist</h2>
+        <h2>🔗 Add Custom M3U URL</h2>
+        <p className={styles.customDesc}>
+          Paste any M3U playlist URL (like from Mrgify, IPTV, or any other source)
+        </p>
         <div className={styles.inputGroup}>
           <input
             type="url"
-            placeholder="Paste M3U URL here..."
+            placeholder="https://example.com/playlist.m3u"
             value={customUrl}
             onChange={(e) => setCustomUrl(e.target.value)}
             className={styles.input}
@@ -122,15 +109,14 @@ export default function Home() {
             className={styles.submitBtn}
             disabled={loading}
           >
-            {loading ? '⏳' : '➕'} Add
+            {loading ? '⏳ Loading...' : 'Load'}
           </button>
         </div>
       </div>
 
       {/* Footer */}
       <div className={styles.footer}>
-        <p>💡 Powered by Mrgify BDIX IPTV Project</p>
-        <small>Works on 4G/5G - No WiFi needed!</small>
+        <p>💡 Just paste M3U URL and start watching!</p>
       </div>
     </div>
   );
