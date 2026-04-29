@@ -1,5 +1,5 @@
 {
-  "name": "tv-streaming-app",
+  "name": "sports-tv-hub",
   "version": "1.0.0",
   "private": true,
   "scripts": {
@@ -10,8 +10,6 @@
   "dependencies": {
     "next": "latest",
     "react": "18.2.0",
-    "react-dom": "18.2.0",
-    "axios": "latest",
-    "hls.js": "latest"
+    "react-dom": "18.2.0"
   }
 }
