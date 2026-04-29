@@ -1,39 +1,100 @@
+import { useState } from 'react';
 import Link from 'next/link';
 import styles from '../styles/Home.module.css';
 
 export default function Home() {
-  const servers = [
-    { id: 1, name: 'TV Server 1' },
-    { id: 2, name: 'TV Server 2' },
-    { id: 3, name: 'TV Server 3' },
-    { id: 4, name: 'TV Server 4' },
-    { id: 5, name: 'TV Server 5' },
-    { id: 6, name: 'TV Server 6' },
-    { id: 7, name: 'TV Server 7' },
-    { id: 8, name: 'TV Server 8' },
+  const [customUrl, setCustomUrl] = useState('');
+  const [showInput, setShowInput] = useState(false);
+
+  const playlists = [
+    {
+      id: 1,
+      name: '🌍 Global Sports M3U',
+      url: 'https://raw.githubusercontent.com/iptv-org/iptv/master/categories/sports.m3u',
+      description: 'International sports channels'
+    },
+    {
+      id: 2,
+      name: '🏏 India Sports',
+      url: 'https://raw.githubusercontent.com/iptv-org/iptv/master/streams/in.m3u',
+      description: 'Star Sports, Cricket HD'
+    },
+    {
+      id: 3,
+      name: '🇧🇩 Bangladesh Sports',
+      url: 'https://raw.githubusercontent.com/iptv-org/iptv/master/streams/bd.m3u',
+      description: 'Local BD channels'
+    },
+    {
+      id: 4,
+      name: '⚽ European Sports',
+      url: 'https://raw.githubusercontent.com/iptv-org/iptv/master/streams/de.m3u',
+      description: 'European football leagues'
+    },
+    {
+      id: 5,
+      name: '🏈 USA Sports',
+      url: 'https://raw.githubusercontent.com/iptv-org/iptv/master/streams/us.m3u',
+      description: 'NBA, NFL, MLB'
+    },
+    {
+      id: 6,
+      name: '🎾 Mixed Sports',
+      url: 'https://raw.githubusercontent.com/iptv-org/iptv/master/streams/pk.m3u',
+      description: 'Mixed sport channels'
+    }
   ];
+
+  const handleCustom = (url) => {
+    if (customUrl.trim()) {
+      window.location.href = `/channels?playlistUrl=${encodeURIComponent(customUrl)}`;
+    }
+  };
 
   return (
     <div className={styles.container}>
       <div className={styles.header}>
-        <h1>📺 TV Streaming</h1>
-        <p>Watch anywhere! No WiFi needed</p>
+        <h1>⚽ Sports TV Hub</h1>
+        <p>Watch Live Sports Worldwide</p>
       </div>
 
       <div className={styles.grid}>
-        {servers.map((server) => (
-          <Link key={server.id} href={`/channels?serverId=${server.id}`}>
+        {playlists.map((playlist) => (
+          <Link key={playlist.id} href={`/channels?playlistUrl=${encodeURIComponent(playlist.url)}&name=${playlist.name}`}>
             <a className={styles.card}>
-              <div className={styles.icon}>📡</div>
-              <h2>{server.name}</h2>
-              <p>Tap to watch →</p>
+              <div className={styles.icon}>{playlist.name.split(' ')[0]}</div>
+              <h3>{playlist.name}</h3>
+              <p>{playlist.description}</p>
+              <span className={styles.tag}>M3U</span>
             </a>
           </Link>
         ))}
       </div>
 
+      <div className={styles.customSection}>
+        <h2>📋 Add Custom M3U URL</h2>
+        <div className={styles.inputGroup}>
+          <input
+            type="text"
+            placeholder="Paste M3U URL here..."
+            value={customUrl}
+            onChange={(e) => setCustomUrl(e.target.value)}
+            className={styles.input}
+          />
+          <button 
+            onClick={() => handleCustom(customUrl)}
+            className={styles.submitBtn}
+          >
+            ➕ Add
+          </button>
+        </div>
+        <small style={{ color: '#999', marginTop: '8px', display: 'block' }}>
+          Paste any M3U playlist URL (sports channels)
+        </small>
+      </div>
+
       <div className={styles.footer}>
-        <p>✨ 8 Live TV Servers</p>
+        <p>💡 Click any playlist to browse channels</p>
       </div>
     </div>
   );
