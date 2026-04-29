@@ -1,6 +1,6 @@
 .container {
   min-height: 100vh;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
   padding: 15px;
 }
 
@@ -8,36 +8,37 @@
   display: flex;
   align-items: center;
   gap: 10px;
-  margin-bottom: 25px;
+  margin-bottom: 20px;
   color: white;
-  background: rgba(0, 0, 0, 0.2);
+  background: rgba(255, 107, 107, 0.1);
   padding: 15px;
   border-radius: 12px;
+  border: 1px solid rgba(255, 107, 107, 0.2);
 }
 
 .backBtn {
-  background: rgba(255, 255, 255, 0.2);
-  color: white;
-  padding: 8px 15px;
+  background: rgba(255, 107, 107, 0.2);
+  color: #ff6b6b;
+  padding: 8px 12px;
   border-radius: 8px;
   text-decoration: none;
   font-weight: bold;
   cursor: pointer;
   transition: all 0.3s;
-  border: none;
-  font-size: 1em;
+  border: 1px solid rgba(255, 107, 107, 0.3);
+  font-size: 0.95em;
   min-width: 70px;
 }
 
 .backBtn:active {
-  background: rgba(255, 255, 255, 0.4);
-  transform: scale(0.95);
+  background: rgba(255, 107, 107, 0.4);
 }
 
 .header h2 {
   margin: 0;
-  font-size: 1.4em;
+  font-size: 1.3em;
   flex: 1;
+  word-break: break-all;
 }
 
 .loading {
@@ -47,9 +48,48 @@
   font-size: 1.1em;
 }
 
+.error {
+  background: rgba(255, 68, 68, 0.2);
+  border: 1px solid #ff4444;
+  color: #ffaaaa;
+  padding: 15px;
+  border-radius: 8px;
+  margin-bottom: 20px;
+}
+
+.searchBox {
+  background: rgba(255, 255, 255, 0.05);
+  padding: 15px;
+  border-radius: 8px;
+  margin-bottom: 20px;
+  border: 1px solid rgba(255, 107, 107, 0.2);
+}
+
+.searchInput {
+  width: 100%;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 107, 107, 0.3);
+  color: white;
+  padding: 12px;
+  border-radius: 8px;
+  font-size: 0.95em;
+  margin-bottom: 10px;
+}
+
+.searchInput::placeholder {
+  color: #888;
+}
+
+.count {
+  margin: 0;
+  color: #ff6b6b;
+  font-size: 0.9em;
+  font-weight: bold;
+}
+
 .channelGrid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
   gap: 12px;
   animation: fadeIn 0.5s ease;
 }
@@ -60,11 +100,12 @@
 }
 
 .channelCard {
-  background: rgba(255, 255, 255, 0.95);
-  padding: 15px;
-  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 107, 107, 0.2);
+  padding: 12px;
+  border-radius: 10px;
   text-decoration: none;
-  color: #333;
+  color: #fff;
   cursor: pointer;
   transition: all 0.3s;
   text-align: center;
@@ -72,34 +113,53 @@
   flex-direction: column;
   align-items: center;
   gap: 8px;
-  min-height: 140px;
+  min-height: 130px;
   justify-content: center;
-  border: 2px solid transparent;
+  backdrop-filter: blur(10px);
 }
 
 .channelCard:active {
   transform: scale(0.92);
-  border-color: #667eea;
-  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+  border-color: #ff6b6b;
+  background: rgba(255, 107, 107, 0.15);
 }
 
-.emoji {
-  font-size: 2.5em;
+.logo {
+  width: 60px;
+  height: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 8px;
+  overflow: hidden;
 }
 
-.channelCard p {
+.logo img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.placeholder {
+  font-size: 2em;
+}
+
+.name {
   margin: 0;
-  font-size: 0.85em;
+  font-size: 0.8em;
   font-weight: 600;
   word-break: break-word;
+  line-height: 1.2;
 }
 
 .live {
-  background: #ff4444;
-  color: white;
-  padding: 4px 8px;
+  background: rgba(255, 68, 68, 0.3);
+  color: #ffaaaa;
+  border: 1px solid #ff4444;
+  padding: 3px 6px;
   border-radius: 4px;
-  font-size: 0.7em;
+  font-size: 0.65em;
   font-weight: bold;
 }
 
@@ -110,7 +170,7 @@
   }
 
   .header h2 {
-    font-size: 1.1em;
+    font-size: 1.05em;
   }
 
   .channelGrid {
@@ -119,11 +179,12 @@
   }
 
   .channelCard {
-    padding: 12px;
-    min-height: 120px;
+    min-height: 110px;
+    padding: 10px;
   }
 
-  .emoji {
-    font-size: 2em;
+  .logo {
+    width: 50px;
+    height: 50px;
   }
 }
