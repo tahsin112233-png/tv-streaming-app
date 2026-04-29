@@ -5,46 +5,41 @@ import styles from '../styles/Player.module.css';
 
 export default function Player() {
   const router = useRouter();
-  const { serverId, channelId, name } = router.query;
+  const { channelName, streamUrl } = router.query;
   const [isPlaying, setIsPlaying] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [streamUrl, setStreamUrl] = useState(null);
   const [error, setError] = useState('');
   const videoRef = useRef(null);
 
-  // HLS player setup
   useEffect(() => {
     if (isPlaying && streamUrl && videoRef.current) {
       try {
-        // For HLS streams (.m3u8)
+        // Load HLS.js for M3U8 support
         if (streamUrl.includes('.m3u8')) {
-          if (videoRef.current.canPlayType('application/vnd.apple.mpegurl')) {
-            // Safari supports HLS natively
-            videoRef.current.src = streamUrl;
-          } else {
-            // Use HLS.js for other browsers
-            const script = document.createElement('script');
-            script.src = 'https://cdn.jsdelivr.net/npm/hls.js@latest';
-            script.async = true;
-            script.onload = () => {
-              if (window.Hls && window.Hls.isSupported()) {
-                const hls = new window.Hls();
-                hls.loadSource(streamUrl);
-                hls.attachMedia(videoRef.current);
-                hls.on(window.Hls.Events.ERROR, (event, data) => {
-                  if (data.fatal) {
-                    setError('Stream error: ' + data.response?.statusText || 'Unknown');
-                  }
+          const script = document.createElement('script');
+          script.src = 'https://cdn.jsdelivr.net/npm/hls.js@latest';
+          script.async = true;
+          script.onload = () => {
+            if (window.Hls && window.Hls.isSupported()) {
+              const hls = new window.Hls();
+              hls.loadSource(streamUrl);
+              hls.attachMedia(videoRef.current);
+              hls.on(window.Hls.Events.MANIFEST_PARSED, () => {
+                videoRef.current.play().catch(err => {
+                  setError('Autoplay blocked: ' + err.message);
                 });
-              } else {
-                // Fallback: just try to play
-                videoRef.current.src = streamUrl;
-              }
-            };
-            document.head.appendChild(script);
-          }
+              });
+              hls.on(window.Hls.Events.ERROR, (event, data) => {
+                if (data.fatal) {
+                  setError('Stream error');
+                }
+              });
+            } else {
+              videoRef.current.src = streamUrl;
+            }
+          };
+          document.head.appendChild(script);
         } else {
-          // For direct MP4/other streams
           videoRef.current.src = streamUrl;
         }
       } catch (err) {
@@ -53,43 +48,27 @@ export default function Player() {
     }
   }, [isPlaying, streamUrl]);
 
-  const handlePlay = async () => {
-    setLoading(true);
-    setError('');
-
-    try {
-      const response = await fetch(
-        `/api/getStream?serverId=${serverId}&channelId=${channelId}`
-      );
-      const data = await response.json();
-
-      console.log('Stream response:', data);
-
-      if (data.streamUrl) {
-        setStreamUrl(data.streamUrl);
+  const handlePlay = () => {
+    if (streamUrl) {
+      setLoading(true);
+      setError('');
+      setTimeout(() => {
         setIsPlaying(true);
-      } else {
-        setError('No stream URL available');
-      }
-    } catch (err) {
-      setError('Failed to load stream: ' + err.message);
-    } finally {
-      setLoading(false);
+        setLoading(false);
+      }, 500);
     }
   };
 
-  if (!serverId) return <p className={styles.loading}>Loading...</p>;
+  if (!channelName || !streamUrl) return <p className={styles.loading}>Loading...</p>;
 
   return (
     <div className={styles.container}>
-      {/* Header */}
       <div className={styles.header}>
-        <Link href={`/channels?serverId=${serverId}`}>
+        <Link href="/channels">
           <a className={styles.backBtn}>← Back</a>
         </Link>
       </div>
 
-      {/* Player */}
       <div className={styles.playerWrapper}>
         {!isPlaying ? (
           <div className={styles.playerPlaceholder}>
@@ -103,36 +82,28 @@ export default function Player() {
             {error && <p style={{ color: '#ffaaaa', marginTop: '15px', fontSize: '0.9em' }}>{error}</p>}
           </div>
         ) : (
-          <div style={{ width: '100%', height: '100%' }}>
-            <video
-              ref={videoRef}
-              controls
-              autoPlay
-              style={{
-                width: '100%',
-                height: '100%',
-                backgroundColor: '#000'
-              }}
-              onError={(e) => {
-                console.log('Video error:', e);
-                setError('Video playback error');
-              }}
-            >
-              Your browser doesn't support video playback.
-            </video>
-          </div>
+          <video
+            ref={videoRef}
+            controls
+            autoPlay
+            style={{
+              width: '100%',
+              height: '100%',
+              backgroundColor: '#000'
+            }}
+            onError={(e) => {
+              console.log('Video error:', e);
+              setError('Playback error - stream may be offline');
+            }}
+          >
+            Your browser doesn't support video playback.
+          </video>
         )}
       </div>
 
-      {/* Info */}
       <div className={styles.info}>
-        <h2>📺 {name || 'Channel'}</h2>
-        <p>Server: <strong>TV Server {serverId}</strong></p>
-        <p>Channel: <strong>Channel {channelId}</strong></p>
-
-        <div style={{ marginTop: '12px', marginBottom: '12px' }}>
-          <small style={{ color: '#aaa' }}>Stream: {streamUrl ? streamUrl.substring(0, 40) + '...' : 'Not loaded'}</small>
-        </div>
+        <h2>📺 {decodeURIComponent(channelName)}</h2>
+        <p>Stream: <small style={{ wordBreak: 'break-all' }}>{streamUrl.substring(0, 60)}...</small></p>
 
         {error && (
           <div className={styles.error}>
@@ -144,7 +115,7 @@ export default function Player() {
           <div className={styles.stats}>
             <p>✅ Stream Active</p>
             <p>📡 Connected</p>
-            <p>🎬 Playing...</p>
+            <p>⚽ Playing Live...</p>
           </div>
         )}
 
@@ -153,13 +124,12 @@ export default function Player() {
             className={styles.stopBtn}
             onClick={() => {
               setIsPlaying(false);
-              setStreamUrl(null);
               if (videoRef.current) {
                 videoRef.current.src = '';
               }
             }}
           >
-            ⏹️ Stop Stream
+            ⏹️ Stop
           </button>
         )}
       </div>
