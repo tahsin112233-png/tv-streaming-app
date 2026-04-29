@@ -1,100 +1,136 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import styles from '../styles/Home.module.css';
 
 export default function Home() {
   const [customUrl, setCustomUrl] = useState('');
-  const [showInput, setShowInput] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [mrgifyStats, setMrgifyStats] = useState(null);
+
+  useEffect(() => {
+    // Fetch Mrgify stats
+    fetchMrgifyStats();
+  }, []);
+
+  const fetchMrgifyStats = async () => {
+    try {
+      const res = await fetch('/api/fetchMrgify');
+      const data = await res.json();
+      if (data.success) {
+        setMrgifyStats(data);
+      }
+    } catch (err) {
+      console.log('Could not fetch Mrgify stats');
+    }
+  };
 
   const playlists = [
     {
-      id: 1,
-      name: '🌍 Global Sports M3U',
-      url: 'https://raw.githubusercontent.com/iptv-org/iptv/master/categories/sports.m3u',
-      description: 'International sports channels'
+      id: 'mrgify',
+      name: '🇧🇩 Mrgify BDIX IPTV',
+      description: 'Best BDIX channels (Auto-updates every 10 min)',
+      icon: '⚡',
+      channels: mrgifyStats?.total || '...'
     },
     {
-      id: 2,
-      name: '🏏 India Sports',
-      url: 'https://raw.githubusercontent.com/iptv-org/iptv/master/streams/in.m3u',
-      description: 'Star Sports, Cricket HD'
+      id: 'sports',
+      name: '⚽ Global Sports',
+      description: 'International sports channels',
+      icon: '🏟️',
+      channels: '500+'
     },
     {
-      id: 3,
-      name: '🇧🇩 Bangladesh Sports',
-      url: 'https://raw.githubusercontent.com/iptv-org/iptv/master/streams/bd.m3u',
-      description: 'Local BD channels'
+      id: 'india',
+      name: '🇮🇳 India Channels',
+      description: 'Star Sports, Cricket HD, Sony',
+      icon: '🎬',
+      channels: '300+'
     },
     {
-      id: 4,
-      name: '⚽ European Sports',
-      url: 'https://raw.githubusercontent.com/iptv-org/iptv/master/streams/de.m3u',
-      description: 'European football leagues'
-    },
-    {
-      id: 5,
-      name: '🏈 USA Sports',
-      url: 'https://raw.githubusercontent.com/iptv-org/iptv/master/streams/us.m3u',
-      description: 'NBA, NFL, MLB'
-    },
-    {
-      id: 6,
-      name: '🎾 Mixed Sports',
-      url: 'https://raw.githubusercontent.com/iptv-org/iptv/master/streams/pk.m3u',
-      description: 'Mixed sport channels'
+      id: 'bd',
+      name: '🇧🇩 Bangladesh',
+      description: 'Local BD channels',
+      icon: '📺',
+      channels: '100+'
     }
   ];
 
-  const handleCustom = (url) => {
-    if (customUrl.trim()) {
-      window.location.href = `/channels?playlistUrl=${encodeURIComponent(customUrl)}`;
+  const handleCustom = async () => {
+    if (!customUrl.trim()) return;
+    
+    setLoading(true);
+    try {
+      new URL(customUrl);
+      window.location.href = `/channels?playlistUrl=${encodeURIComponent(customUrl)}&name=Custom%20Playlist`;
+    } catch (err) {
+      alert('Invalid URL!');
+      setLoading(false);
     }
   };
 
   return (
     <div className={styles.container}>
+      {/* Header */}
       <div className={styles.header}>
-        <h1>⚽ Sports TV Hub</h1>
-        <p>Watch Live Sports Worldwide</p>
+        <div className={styles.logo}>⚽📺</div>
+        <h1>Sports TV Hub</h1>
+        <p>Watch live sports + BDIX channels worldwide</p>
       </div>
 
+      {/* Featured: Mrgify */}
+      <Link href="/channels?source=mrgify&name=Mrgify%20BDIX%20IPTV">
+        <a className={styles.featuredCard}>
+          <div className={styles.badge}>⚡ RECOMMENDED</div>
+          <h2>🇧🇩 Mrgify BDIX IPTV</h2>
+          <p>Best BDIX channels + Sports</p>
+          <span className={styles.update}>
+            {mrgifyStats ? `${mrgifyStats.total} Channels` : 'Loading...'} • Auto-updates every 10 min
+          </span>
+          <span className={styles.status}>✅ Online & Stable</span>
+        </a>
+      </Link>
+
+      {/* Other Playlists */}
+      <h3 className={styles.sectionTitle}>Other Playlists</h3>
       <div className={styles.grid}>
-        {playlists.map((playlist) => (
-          <Link key={playlist.id} href={`/channels?playlistUrl=${encodeURIComponent(playlist.url)}&name=${playlist.name}`}>
+        {playlists.slice(1).map((playlist) => (
+          <Link key={playlist.id} href={`/channels?playlistId=${playlist.id}&name=${encodeURIComponent(playlist.name)}`}>
             <a className={styles.card}>
-              <div className={styles.icon}>{playlist.name.split(' ')[0]}</div>
+              <div className={styles.icon}>{playlist.icon}</div>
               <h3>{playlist.name}</h3>
               <p>{playlist.description}</p>
-              <span className={styles.tag}>M3U</span>
+              <small className={styles.channelCount}>{playlist.channels} channels</small>
             </a>
           </Link>
         ))}
       </div>
 
+      {/* Custom URL */}
       <div className={styles.customSection}>
-        <h2>📋 Add Custom M3U URL</h2>
+        <h2>➕ Add Custom M3U Playlist</h2>
         <div className={styles.inputGroup}>
           <input
-            type="text"
+            type="url"
             placeholder="Paste M3U URL here..."
             value={customUrl}
             onChange={(e) => setCustomUrl(e.target.value)}
             className={styles.input}
+            disabled={loading}
           />
           <button 
-            onClick={() => handleCustom(customUrl)}
+            onClick={handleCustom}
             className={styles.submitBtn}
+            disabled={loading}
           >
-            ➕ Add
+            {loading ? '⏳' : '➕'} Add
           </button>
         </div>
-        <small style={{ color: '#999', marginTop: '8px', display: 'block' }}>
-          Paste any M3U playlist URL (sports channels)
-        </small>
       </div>
 
+      {/* Footer */}
       <div className={styles.footer}>
-        <p>💡 Click any playlist to browse channels</p>
+        <p>💡 Powered by Mrgify BDIX IPTV Project</p>
+        <small>Works on 4G/5G - No WiFi needed!</small>
       </div>
     </div>
   );
