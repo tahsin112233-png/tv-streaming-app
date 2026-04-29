@@ -5,117 +5,168 @@ import styles from '../styles/Player.module.css';
 
 export default function Player() {
   const router = useRouter();
-  const { channelName, streamUrl } = router.query;
+  const { channelName, streamUrl, logo, category } = router.query;
   const [isPlaying, setIsPlaying] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [retryCount, setRetryCount] = useState(0);
   const videoRef = useRef(null);
+  const hlsRef = useRef(null);
+
+  useEffect(() => {
+    return () => {
+      if (hlsRef.current) {
+        hlsRef.current.destroy();
+      }
+    };
+  }, []);
 
   useEffect(() => {
     if (isPlaying && streamUrl && videoRef.current) {
-      try {
-        // Load HLS.js for M3U8 support
-        if (streamUrl.includes('.m3u8')) {
-          const script = document.createElement('script');
-          script.src = 'https://cdn.jsdelivr.net/npm/hls.js@latest';
-          script.async = true;
-          script.onload = () => {
-            if (window.Hls && window.Hls.isSupported()) {
-              const hls = new window.Hls();
-              hls.loadSource(streamUrl);
-              hls.attachMedia(videoRef.current);
-              hls.on(window.Hls.Events.MANIFEST_PARSED, () => {
-                videoRef.current.play().catch(err => {
-                  setError('Autoplay blocked: ' + err.message);
-                });
-              });
-              hls.on(window.Hls.Events.ERROR, (event, data) => {
-                if (data.fatal) {
-                  setError('Stream error');
-                }
-              });
-            } else {
-              videoRef.current.src = streamUrl;
-            }
-          };
-          document.head.appendChild(script);
-        } else {
-          videoRef.current.src = streamUrl;
-        }
-      } catch (err) {
-        setError('Player error: ' + err.message);
-      }
+      loadStream();
     }
-  }, [isPlaying, streamUrl]);
+  }, [isPlaying, streamUrl, retryCount]);
 
-  const handlePlay = () => {
-    if (streamUrl) {
-      setLoading(true);
+  const loadStream = async () => {
+    try {
       setError('');
-      setTimeout(() => {
-        setIsPlaying(true);
-        setLoading(false);
-      }, 500);
+
+      // For HLS streams
+      if (streamUrl.includes('.m3u8')) {
+        const script = document.createElement('script');
+        script.src = 'https://cdn.jsdelivr.net/npm/hls.js@latest';
+        script.async = true;
+        script.onload = () => {
+          if (window.Hls && window.Hls.isSupported()) {
+            if (hlsRef.current) hlsRef.current.destroy();
+
+            const hls = new window.Hls({
+              maxMaxBufferLength: 30,
+              maxBufferLength: 10,
+              fragLoadingTimeOut: 20000
+            });
+            
+            hlsRef.current = hls;
+            hls.loadSource(streamUrl);
+            hls.attachMedia(videoRef.current);
+
+            hls.on(window.Hls.Events.MANIFEST_PARSED, () => {
+              videoRef.current.play().catch(e => {
+                setError('Tap to play');
+              });
+            });
+
+            hls.on(window.Hls.Events.ERROR, (event, data) => {
+              if (data.fatal) {
+                if (retryCount < 3) {
+                  setRetryCount(retryCount + 1);
+                  setTimeout(() => loadStream(), 2000);
+                } else {
+                  setError('Stream offline - try another channel');
+                }
+              }
+            });
+          } else {
+            videoRef.current.src = streamUrl;
+            videoRef.current.play();
+          }
+        };
+        document.head.appendChild(script);
+      } else {
+        videoRef.current.src = streamUrl;
+        videoRef.current.play();
+      }
+    } catch (err) {
+      setError('Error: ' + err.message);
     }
   };
 
-  if (!channelName || !streamUrl) return <p className={styles.loading}>Loading...</p>;
+  const handlePlay = () => {
+    setLoading(true);
+    setRetryCount(0);
+    setTimeout(() => {
+      setIsPlaying(true);
+      setLoading(false);
+    }, 500);
+  };
+
+  if (!channelName || !streamUrl) {
+    return <p className={styles.loading}>Loading...</p>;
+  }
 
   return (
     <div className={styles.container}>
+      {/* Header */}
       <div className={styles.header}>
         <Link href="/channels">
           <a className={styles.backBtn}>← Back</a>
         </Link>
       </div>
 
+      {/* Player */}
       <div className={styles.playerWrapper}>
         {!isPlaying ? (
           <div className={styles.playerPlaceholder}>
+            {logo && logo !== '' && (
+              <img 
+                src={logo} 
+                alt="channel" 
+                className={styles.channelLogo}
+                onError={(e) => e.target.style.display = 'none'}
+              />
+            )}
             <button 
               className={styles.playBtn}
               onClick={handlePlay}
               disabled={loading}
             >
-              {loading ? '⏳ Loading...' : '▶️ Play Stream'}
+              {loading ? '⏳ Loading...' : '▶️ Play'}
             </button>
-            {error && <p style={{ color: '#ffaaaa', marginTop: '15px', fontSize: '0.9em' }}>{error}</p>}
           </div>
         ) : (
           <video
             ref={videoRef}
             controls
-            autoPlay
             style={{
               width: '100%',
               height: '100%',
               backgroundColor: '#000'
             }}
-            onError={(e) => {
-              console.log('Video error:', e);
-              setError('Playback error - stream may be offline');
-            }}
+            onClick={() => videoRef.current?.play()}
           >
-            Your browser doesn't support video playback.
+            Your browser doesn't support video.
           </video>
         )}
       </div>
 
+      {/* Info */}
       <div className={styles.info}>
         <h2>📺 {decodeURIComponent(channelName)}</h2>
-        <p>Stream: <small style={{ wordBreak: 'break-all' }}>{streamUrl.substring(0, 60)}...</small></p>
+        {category && <p>Category: <strong>{decodeURIComponent(category)}</strong></p>}
+        <p className={styles.streamInfo}>
+          <small>
+            Stream: {streamUrl.includes('github') ? '✅ GitHub' : '✅ Direct'}
+          </small>
+        </p>
 
         {error && (
           <div className={styles.error}>
             ⚠️ {error}
+            {retryCount < 3 && (
+              <button 
+                className={styles.retryBtn}
+                onClick={() => setRetryCount(retryCount + 1)}
+              >
+                🔄 Retry ({retryCount}/3)
+              </button>
+            )}
           </div>
         )}
 
         {isPlaying && !error && (
           <div className={styles.stats}>
-            <p>✅ Stream Active</p>
-            <p>📡 Connected</p>
-            <p>⚽ Playing Live...</p>
+            <p>✅ Stream Playing</p>
+            <p>📡 Connected (Mrgify BDIX)</p>
           </div>
         )}
 
@@ -124,8 +175,12 @@ export default function Player() {
             className={styles.stopBtn}
             onClick={() => {
               setIsPlaying(false);
+              setRetryCount(0);
               if (videoRef.current) {
                 videoRef.current.src = '';
+              }
+              if (hlsRef.current) {
+                hlsRef.current.destroy();
               }
             }}
           >
