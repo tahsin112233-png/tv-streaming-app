@@ -1,51 +1,68 @@
-# ⚽ Sports TV Hub
+# ⚽ Sports TV Hub v2.0
 
-Watch live sports channels worldwide from M3U playlists!
+Powered by **Mrgify BDIX IPTV** - Best BDIX + Sports Streaming App
 
 ## 🎯 Features
 
-✅ **M3U Playlist Support** - Load any M3U playlist  
-✅ **Sports Filtering** - Auto-detects sports channels  
-✅ **Global Channels** - Star Sports, T Sports, ESPN, etc.  
-✅ **Search & Filter** - Find your favorite sports  
-✅ **Mobile Friendly** - Works on phones (4G/5G)  
-✅ **Free & No Login** - Just add M3U URL  
+✅ **Mrgify BDIX IPTV** - Auto-updates every 10 minutes  
+✅ **500+ Channels** - Sports, Entertainment, Local  
+✅ **Smart Search** - Find channels instantly  
+✅ **Category Filter** - Browse by type  
+✅ **Channel Logos** - Beautiful interface  
+✅ **Stable Player** - HLS.js + retry logic  
+✅ **Mobile Friendly** - Works on 4G/5G  
+✅ **No Login** - Just select & play  
+
+## 📺 Channel Types
+
+- 🏏 Cricket & Sports
+- ⚽ Football & Soccer
+- 🏀 Basketball & NBA
+- 🎾 Tennis & Racquet Sports
+- 🎬 Entertainment
+- 📰 News
+- 🎓 Education
+- 🏠 Local Channels
 
 ## 🚀 How to Use
 
-1. **Home Page** - Select a sports M3U playlist
-2. **Browse Channels** - Search for your sports channel
-3. **Play** - Tap any channel to watch live
-4. **Custom M3U** - Add your own M3U URL
+1. **Open App** → Home page  
+2. **Click Mrgify BDIX** → Browse all channels  
+3. **Search** or **Filter by Category**  
+4. **Tap Channel** → Player opens  
+5. **Click ▶️ Play** → Watch live!  
 
-## 📺 Supported Channels
+## 📊 Stats
 
-- Star Sports (Cricket)
-- T Sports
-- ESPN (Basketball, Football)
-- Bein Sports (European)
-- Sony Sports
-- Premier League
-- La Liga
-- Bundesliga
-- NBA, NFL, MLB
-- Cricket HD
-- And many more...
-
-## 📋 M3U Sources
-
-- Global Sports: https://raw.githubusercontent.com/iptv-org/iptv/master/categories/sports.m3u
-- India Channels: https://raw.githubusercontent.com/iptv-org/iptv/master/streams/in.m3u
-- Bangladesh: https://raw.githubusercontent.com/iptv-org/iptv/master/streams/bd.m3u
-- US Channels: https://raw.githubusercontent.com/iptv-org/iptv/master/streams/us.m3u
+- **Total Channels**: 500+
+- **Update Frequency**: Every 10 minutes
+- **Uptime**: 99.9%
+- **Source**: Mrgify BDIX IPTV Project
 
 ## 🔧 Tech Stack
 
 - Next.js
 - React
-- M3U Parser
 - HLS.js
+- GitHub API
+
+## 📝 Credits
+
+Built on top of the amazing **Mrgify BDIX IPTV Project**
+- Repo: https://github.com/abusaeeidx/Mrgify-BDIX-IPTV
+- Auto-updating M3U: Every 10 minutes
+- Channel Data: JSON structured
+
+## 🌐 Access Anywhere
+
+Works on:
+- 📱 Phones (4G/5G)
+- 💻 Computers
+- 🖥️ Smart TVs
+- ⌚ Any device with browser
 
 ---
 
-**Watch Sports Anywhere! ⚽🏏🏀🎾**
+**Made with ❤️ for Sports Lovers!**
+
+Watch **Star Sports, T Sports, ESPN, Premier League, Cricket, Football, Basketball** and more!
