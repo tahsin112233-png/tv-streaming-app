@@ -1,6 +1,6 @@
 import { useRouter } from 'next/router';
 import Link from 'next/link';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import styles from '../styles/Player.module.css';
 
 export default function Player() {
@@ -10,29 +10,66 @@ export default function Player() {
   const [loading, setLoading] = useState(false);
   const [streamUrl, setStreamUrl] = useState(null);
   const [error, setError] = useState('');
-  const [quality, setQuality] = useState('auto');
+  const videoRef = useRef(null);
+
+  // HLS player setup
+  useEffect(() => {
+    if (isPlaying && streamUrl && videoRef.current) {
+      try {
+        // For HLS streams (.m3u8)
+        if (streamUrl.includes('.m3u8')) {
+          if (videoRef.current.canPlayType('application/vnd.apple.mpegurl')) {
+            // Safari supports HLS natively
+            videoRef.current.src = streamUrl;
+          } else {
+            // Use HLS.js for other browsers
+            const script = document.createElement('script');
+            script.src = 'https://cdn.jsdelivr.net/npm/hls.js@latest';
+            script.async = true;
+            script.onload = () => {
+              if (window.Hls && window.Hls.isSupported()) {
+                const hls = new window.Hls();
+                hls.loadSource(streamUrl);
+                hls.attachMedia(videoRef.current);
+                hls.on(window.Hls.Events.ERROR, (event, data) => {
+                  if (data.fatal) {
+                    setError('Stream error: ' + data.response?.statusText || 'Unknown');
+                  }
+                });
+              } else {
+                // Fallback: just try to play
+                videoRef.current.src = streamUrl;
+              }
+            };
+            document.head.appendChild(script);
+          }
+        } else {
+          // For direct MP4/other streams
+          videoRef.current.src = streamUrl;
+        }
+      } catch (err) {
+        setError('Player error: ' + err.message);
+      }
+    }
+  }, [isPlaying, streamUrl]);
 
   const handlePlay = async () => {
     setLoading(true);
     setError('');
 
     try {
-      // Fetch stream URL from API
       const response = await fetch(
         `/api/getStream?serverId=${serverId}&channelId=${channelId}`
       );
       const data = await response.json();
 
-      if (data.success && data.streamUrl) {
+      console.log('Stream response:', data);
+
+      if (data.streamUrl) {
         setStreamUrl(data.streamUrl);
         setIsPlaying(true);
       } else {
-        setError('Stream not available. Try another channel.');
-        // Still try to play even if error
-        if (data.streamUrl) {
-          setStreamUrl(data.streamUrl);
-          setIsPlaying(true);
-        }
+        setError('No stream URL available');
       }
     } catch (err) {
       setError('Failed to load stream: ' + err.message);
@@ -63,26 +100,26 @@ export default function Player() {
             >
               {loading ? '⏳ Loading...' : '▶️ Play Stream'}
             </button>
-            {error && <p style={{ color: '#ffaaaa', marginTop: '15px' }}>{error}</p>}
+            {error && <p style={{ color: '#ffaaaa', marginTop: '15px', fontSize: '0.9em' }}>{error}</p>}
           </div>
-        ) : streamUrl ? (
-          <video
-            key={streamUrl}
-            controls
-            autoPlay
-            style={{
-              width: '100%',
-              height: '100%',
-              backgroundColor: '#000'
-            }}
-            onError={() => setError('Video player error')}
-          >
-            <source src={streamUrl} type="application/x-mpegURL" />
-            <p>Your browser doesn't support HTML5 video.</p>
-          </video>
         ) : (
-          <div className={styles.playerPlaceholder}>
-            <p style={{ color: 'white' }}>Loading stream...</p>
+          <div style={{ width: '100%', height: '100%' }}>
+            <video
+              ref={videoRef}
+              controls
+              autoPlay
+              style={{
+                width: '100%',
+                height: '100%',
+                backgroundColor: '#000'
+              }}
+              onError={(e) => {
+                console.log('Video error:', e);
+                setError('Video playback error');
+              }}
+            >
+              Your browser doesn't support video playback.
+            </video>
           </div>
         )}
       </div>
@@ -93,26 +130,8 @@ export default function Player() {
         <p>Server: <strong>TV Server {serverId}</strong></p>
         <p>Channel: <strong>Channel {channelId}</strong></p>
 
-        {/* Quality Selector */}
-        <div style={{ marginTop: '12px' }}>
-          <label style={{ marginRight: '8px' }}>Quality:</label>
-          <select 
-            value={quality} 
-            onChange={(e) => setQuality(e.target.value)}
-            style={{
-              background: 'rgba(255, 255, 255, 0.1)',
-              color: 'white',
-              border: '1px solid rgba(255, 255, 255, 0.2)',
-              padding: '6px 10px',
-              borderRadius: '6px',
-              cursor: 'pointer'
-            }}
-          >
-            <option value="auto">Auto</option>
-            <option value="720p">720p</option>
-            <option value="480p">480p</option>
-            <option value="360p">360p</option>
-          </select>
+        <div style={{ marginTop: '12px', marginBottom: '12px' }}>
+          <small style={{ color: '#aaa' }}>Stream: {streamUrl ? streamUrl.substring(0, 40) + '...' : 'Not loaded'}</small>
         </div>
 
         {error && (
@@ -121,7 +140,7 @@ export default function Player() {
           </div>
         )}
 
-        {isPlaying && (
+        {isPlaying && !error && (
           <div className={styles.stats}>
             <p>✅ Stream Active</p>
             <p>📡 Connected</p>
@@ -135,6 +154,9 @@ export default function Player() {
             onClick={() => {
               setIsPlaying(false);
               setStreamUrl(null);
+              if (videoRef.current) {
+                videoRef.current.src = '';
+              }
             }}
           >
             ⏹️ Stop Stream
