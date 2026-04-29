@@ -1,6 +1,6 @@
 .container {
   min-height: 100vh;
-  background: #000;
+  background: #0a0a0a;
   color: white;
   padding: 15px;
   display: flex;
@@ -14,19 +14,19 @@
 }
 
 .backBtn {
-  background: rgba(255, 255, 255, 0.2);
-  color: white;
+  background: rgba(255, 107, 107, 0.2);
+  color: #ff6b6b;
   padding: 8px 12px;
   border-radius: 8px;
   text-decoration: none;
   font-weight: bold;
   cursor: pointer;
-  border: none;
+  border: 1px solid rgba(255, 107, 107, 0.3);
   font-size: 0.95em;
 }
 
 .backBtn:active {
-  background: rgba(255, 255, 255, 0.4);
+  background: rgba(255, 107, 107, 0.4);
 }
 
 .playerWrapper {
@@ -40,12 +40,13 @@
   align-items: center;
   justify-content: center;
   min-height: 250px;
+  border: 1px solid rgba(255, 107, 107, 0.1);
 }
 
 .playerPlaceholder {
   width: 100%;
   height: 100%;
-  background: linear-gradient(135deg, #1a1a1a 0%, #2a2a2a 100%);
+  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -53,7 +54,7 @@
 }
 
 .playBtn {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #ff6b6b 0%, #ee5a4a 100%);
   color: white;
   border: none;
   padding: 20px 40px;
@@ -62,7 +63,7 @@
   cursor: pointer;
   transition: all 0.3s;
   font-weight: bold;
-  box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+  box-shadow: 0 5px 20px rgba(255, 107, 107, 0.4);
 }
 
 .playBtn:active {
@@ -74,21 +75,17 @@
   cursor: not-allowed;
 }
 
-.videoContainer {
-  width: 100%;
-  height: 100%;
-}
-
 .info {
-  background: rgba(255, 255, 255, 0.05);
+  background: rgba(255, 107, 107, 0.05);
   padding: 18px;
   border-radius: 12px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 107, 107, 0.2);
 }
 
 .info h2 {
   margin: 0 0 12px 0;
   font-size: 1.3em;
+  color: #ff6b6b;
 }
 
 .info p {
