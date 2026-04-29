@@ -1,0 +1,129 @@
+.container {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  padding: 15px;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 25px;
+  color: white;
+  background: rgba(0, 0, 0, 0.2);
+  padding: 15px;
+  border-radius: 12px;
+}
+
+.backBtn {
+  background: rgba(255, 255, 255, 0.2);
+  color: white;
+  padding: 8px 15px;
+  border-radius: 8px;
+  text-decoration: none;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.3s;
+  border: none;
+  font-size: 1em;
+  min-width: 70px;
+}
+
+.backBtn:active {
+  background: rgba(255, 255, 255, 0.4);
+  transform: scale(0.95);
+}
+
+.header h2 {
+  margin: 0;
+  font-size: 1.4em;
+  flex: 1;
+}
+
+.loading {
+  color: white;
+  text-align: center;
+  padding: 40px;
+  font-size: 1.1em;
+}
+
+.channelGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+  gap: 12px;
+  animation: fadeIn 0.5s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.channelCard {
+  background: rgba(255, 255, 255, 0.95);
+  padding: 15px;
+  border-radius: 12px;
+  text-decoration: none;
+  color: #333;
+  cursor: pointer;
+  transition: all 0.3s;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  min-height: 140px;
+  justify-content: center;
+  border: 2px solid transparent;
+}
+
+.channelCard:active {
+  transform: scale(0.92);
+  border-color: #667eea;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+}
+
+.emoji {
+  font-size: 2.5em;
+}
+
+.channelCard p {
+  margin: 0;
+  font-size: 0.85em;
+  font-weight: 600;
+  word-break: break-word;
+}
+
+.live {
+  background: #ff4444;
+  color: white;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 0.7em;
+  font-weight: bold;
+}
+
+@media (max-width: 480px) {
+  .header {
+    gap: 8px;
+    padding: 12px;
+  }
+
+  .header h2 {
+    font-size: 1.1em;
+  }
+
+  .channelGrid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+  }
+
+  .channelCard {
+    padding: 12px;
+    min-height: 120px;
+  }
+
+  .emoji {
+    font-size: 2em;
+  }
+}
