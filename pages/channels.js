@@ -5,79 +5,95 @@ import styles from '../styles/Channels.module.css';
 
 export default function Channels() {
   const router = useRouter();
-  const { playlistUrl, name } = router.query;
+  const { source, playlistId, playlistUrl, name } = router.query;
   const [channels, setChannels] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState('All');
+  const [categories, setCategories] = useState([]);
 
   useEffect(() => {
-    if (playlistUrl) {
-      fetchChannels(playlistUrl);
+    if (source === 'mrgify' || playlistId || playlistUrl) {
+      fetchChannels();
     }
-  }, [playlistUrl]);
+  }, [source, playlistId, playlistUrl]);
 
-  const fetchChannels = async (url) => {
+  const fetchChannels = async () => {
     try {
       setLoading(true);
       setError('');
 
-      const response = await fetch(`/api/parseM3U?url=${encodeURIComponent(url)}`);
+      let url = '';
+      
+      if (source === 'mrgify') {
+        url = '/api/fetchMrgify';
+      } else if (playlistId) {
+        url = `/api/fetchPlaylist?playlistId=${playlistId}`;
+      } else if (playlistUrl) {
+        url = `/api/fetchPlaylist?playlistUrl=${encodeURIComponent(playlistUrl)}`;
+      }
+
+      const response = await fetch(url);
       const data = await response.json();
 
       if (data.success && data.channels.length > 0) {
-        // Filter only sports-related channels
-        const sportsChannels = data.channels.filter(ch => 
-          ch.name.toLowerCase().includes('sport') ||
-          ch.name.toLowerCase().includes('star') ||
-          ch.name.toLowerCase().includes('cricket') ||
-          ch.name.toLowerCase().includes('football') ||
-          ch.name.toLowerCase().includes('tennis') ||
-          ch.name.toLowerCase().includes('hockey') ||
-          ch.name.toLowerCase().includes('nba') ||
-          ch.name.toLowerCase().includes('nfl') ||
-          ch.name.toLowerCase().includes('premier') ||
-          ch.name.toLowerCase().includes('bundesliga') ||
-          ch.name.toLowerCase().includes('la liga') ||
-          ch.name.toLowerCase().includes('bein') ||
-          ch.name.toLowerCase().includes('espn') ||
-          ch.name.toLowerCase().includes('sony') ||
-          ch.name.toLowerCase().includes('t sports') ||
-          ch.name.toLowerCase().includes('gazi')
-        );
-
-        setChannels(sportsChannels.length > 0 ? sportsChannels : data.channels);
+        setChannels(data.channels);
+        
+        // Extract unique categories
+        const cats = ['All', ...new Set(data.channels.map(ch => ch.category || ch.group).filter(Boolean))];
+        setCategories(cats);
       } else {
-        setError('No channels found in this M3U');
+        setError(data.error || 'No channels found');
       }
     } catch (err) {
-      setError('Failed to load M3U: ' + err.message);
+      setError('Failed to load: ' + err.message);
     } finally {
       setLoading(false);
     }
   };
 
-  const filteredChannels = channels.filter(ch =>
-    ch.name.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredChannels = channels.filter(ch => {
+    const matchSearch = ch.name.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchCategory = selectedCategory === 'All' || 
+                         (ch.category === selectedCategory) || 
+                         (ch.group === selectedCategory);
+    return matchSearch && matchCategory;
+  });
 
-  if (!playlistUrl) return <p className={styles.loading}>Loading...</p>;
+  if (!source && !playlistId && !playlistUrl) {
+    return <p className={styles.loading}>Loading...</p>;
+  }
 
   return (
     <div className={styles.container}>
+      {/* Header */}
       <div className={styles.header}>
         <Link href="/">
           <a className={styles.backBtn}>← Back</a>
         </Link>
-        <h2>📺 {name || 'Sports Channels'}</h2>
+        <h2>📺 {name || 'Channels'}</h2>
       </div>
 
-      {loading && <p className={styles.loading}>🔄 Loading channels...</p>}
+      {loading && (
+        <div className={styles.loadingBox}>
+          <p>🔄 Loading channels...</p>
+          <p className={styles.subtext}>This may take 10-20 seconds</p>
+        </div>
+      )}
 
-      {error && <p className={styles.error}>⚠️ {error}</p>}
+      {error && !loading && (
+        <div className={styles.error}>
+          ⚠️ {error}
+          <button onClick={fetchChannels} className={styles.retryBtn}>
+            🔄 Retry
+          </button>
+        </div>
+      )}
 
       {!loading && channels.length > 0 && (
         <>
+          {/* Search & Filter */}
           <div className={styles.searchBox}>
             <input
               type="text"
@@ -86,24 +102,48 @@ export default function Channels() {
               onChange={(e) => setSearchTerm(e.target.value)}
               className={styles.searchInput}
             />
-            <p className={styles.count}>Found: {filteredChannels.length} channels</p>
+            <p className={styles.count}>
+              Found: {filteredChannels.length}/{channels.length} channels
+            </p>
           </div>
 
+          {/* Category Filter */}
+          {categories.length > 1 && (
+            <div className={styles.categoryFilter}>
+              {categories.map(cat => (
+                <button
+                  key={cat}
+                  className={`${styles.categoryBtn} ${selectedCategory === cat ? styles.active : ''}`}
+                  onClick={() => setSelectedCategory(cat)}
+                >
+                  {cat}
+                </button>
+              ))}
+            </div>
+          )}
+
+          {/* Channels Grid */}
           <div className={styles.channelGrid}>
             {filteredChannels.map((channel, index) => (
               <Link 
                 key={index} 
-                href={`/player?channelName=${encodeURIComponent(channel.name)}&streamUrl=${encodeURIComponent(channel.url)}`}
+                href={`/player?channelName=${encodeURIComponent(channel.name)}&streamUrl=${encodeURIComponent(channel.url)}&logo=${encodeURIComponent(channel.logo || '')}&category=${encodeURIComponent(channel.category || '')}`}
               >
                 <a className={styles.channelCard}>
                   <div className={styles.logo}>
                     {channel.logo ? (
-                      <img src={channel.logo} alt={channel.name} onError={(e) => e.target.style.display = 'none'} />
+                      <img 
+                        src={channel.logo} 
+                        alt={channel.name}
+                        onError={(e) => e.target.style.display = 'none'}
+                      />
                     ) : (
                       <div className={styles.placeholder}>📺</div>
                     )}
                   </div>
                   <p className={styles.name}>{channel.name}</p>
+                  {channel.category && <small className={styles.group}>{channel.category}</small>}
+                  {channel.quality && <small className={styles.quality}>{channel.quality}</small>}
                   <span className={styles.live}>🔴 LIVE</span>
                 </a>
               </Link>
