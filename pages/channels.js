@@ -5,65 +5,82 @@ import styles from '../styles/Channels.module.css';
 
 export default function Channels() {
   const router = useRouter();
-  const { source, playlistId, playlistUrl, name } = router.query;
+  const { m3uUrl, name } = router.query;
   const [channels, setChannels] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState('All');
-  const [categories, setCategories] = useState([]);
 
   useEffect(() => {
-    if (source === 'mrgify' || playlistId || playlistUrl) {
-      fetchChannels();
+    if (m3uUrl) {
+      loadM3U();
     }
-  }, [source, playlistId, playlistUrl]);
+  }, [m3uUrl]);
 
-  const fetchChannels = async () => {
+  const loadM3U = async () => {
     try {
       setLoading(true);
       setError('');
 
-      let url = '';
+      // Fetch M3U file
+      const response = await fetch(m3uUrl);
       
-      if (source === 'mrgify') {
-        url = '/api/fetchMrgify';
-      } else if (playlistId) {
-        url = `/api/fetchPlaylist?playlistId=${playlistId}`;
-      } else if (playlistUrl) {
-        url = `/api/fetchPlaylist?playlistUrl=${encodeURIComponent(playlistUrl)}`;
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}`);
       }
 
-      const response = await fetch(url);
-      const data = await response.json();
+      const text = await response.text();
+      const parsed = parseM3U(text);
 
-      if (data.success && data.channels.length > 0) {
-        setChannels(data.channels);
-        
-        // Extract unique categories
-        const cats = ['All', ...new Set(data.channels.map(ch => ch.category || ch.group).filter(Boolean))];
-        setCategories(cats);
-      } else {
-        setError(data.error || 'No channels found');
+      if (parsed.length === 0) {
+        throw new Error('No channels found in M3U file');
       }
+
+      setChannels(parsed);
     } catch (err) {
-      setError('Failed to load: ' + err.message);
+      setError(err.message);
+      console.error('M3U Error:', err);
     } finally {
       setLoading(false);
     }
   };
 
-  const filteredChannels = channels.filter(ch => {
-    const matchSearch = ch.name.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchCategory = selectedCategory === 'All' || 
-                         (ch.category === selectedCategory) || 
-                         (ch.group === selectedCategory);
-    return matchSearch && matchCategory;
-  });
+  const parseM3U = (content) => {
+    const channels = [];
+    const lines = content.split('\n');
+    let currentInfo = null;
 
-  if (!source && !playlistId && !playlistUrl) {
-    return <p className={styles.loading}>Loading...</p>;
-  }
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i].trim();
+
+      if (line.startsWith('#EXTINF:')) {
+        const nameMatch = line.match(/,(.*)$/);
+        const channelName = nameMatch ? nameMatch[1].trim() : 'Unknown';
+        const logoMatch = line.match(/tvg-logo="([^"]*)"/);
+        const logo = logoMatch ? logoMatch[1] : null;
+        const groupMatch = line.match(/group-title="([^"]*)"/);
+        const group = groupMatch ? groupMatch[1] : null;
+
+        currentInfo = { name: channelName, logo, group };
+      } else if (line && !line.startsWith('#') && currentInfo) {
+        if (line.startsWith('http')) {
+          channels.push({
+            ...currentInfo,
+            url: line
+          });
+          currentInfo = null;
+        }
+      }
+    }
+
+    return channels;
+  };
+
+  const filteredChannels = channels.filter(ch =>
+    ch.name.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  if (!m3uUrl) return <p className={styles.loading}>Loading...</p>;
 
   return (
     <div className={styles.container}>
@@ -77,15 +94,15 @@ export default function Channels() {
 
       {loading && (
         <div className={styles.loadingBox}>
-          <p>🔄 Loading channels...</p>
-          <p className={styles.subtext}>This may take 10-20 seconds</p>
+          <p>🔄 Loading M3U...</p>
+          <p className={styles.subtext}>Please wait, parsing channels...</p>
         </div>
       )}
 
       {error && !loading && (
         <div className={styles.error}>
-          ⚠️ {error}
-          <button onClick={fetchChannels} className={styles.retryBtn}>
+          ⚠️ Error: {error}
+          <button onClick={loadM3U} className={styles.retryBtn}>
             🔄 Retry
           </button>
         </div>
@@ -93,11 +110,11 @@ export default function Channels() {
 
       {!loading && channels.length > 0 && (
         <>
-          {/* Search & Filter */}
+          {/* Search */}
           <div className={styles.searchBox}>
             <input
               type="text"
-              placeholder="Search channels..."
+              placeholder="🔍 Search channels..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className={styles.searchInput}
@@ -107,27 +124,12 @@ export default function Channels() {
             </p>
           </div>
 
-          {/* Category Filter */}
-          {categories.length > 1 && (
-            <div className={styles.categoryFilter}>
-              {categories.map(cat => (
-                <button
-                  key={cat}
-                  className={`${styles.categoryBtn} ${selectedCategory === cat ? styles.active : ''}`}
-                  onClick={() => setSelectedCategory(cat)}
-                >
-                  {cat}
-                </button>
-              ))}
-            </div>
-          )}
-
           {/* Channels Grid */}
           <div className={styles.channelGrid}>
-            {filteredChannels.map((channel, index) => (
+            {filteredChannels.map((channel, idx) => (
               <Link 
-                key={index} 
-                href={`/player?channelName=${encodeURIComponent(channel.name)}&streamUrl=${encodeURIComponent(channel.url)}&logo=${encodeURIComponent(channel.logo || '')}&category=${encodeURIComponent(channel.category || '')}`}
+                key={idx}
+                href={`/player?name=${encodeURIComponent(channel.name)}&url=${encodeURIComponent(channel.url)}&logo=${encodeURIComponent(channel.logo || '')}`}
               >
                 <a className={styles.channelCard}>
                   <div className={styles.logo}>
@@ -142,9 +144,7 @@ export default function Channels() {
                     )}
                   </div>
                   <p className={styles.name}>{channel.name}</p>
-                  {channel.category && <small className={styles.group}>{channel.category}</small>}
-                  {channel.quality && <small className={styles.quality}>{channel.quality}</small>}
-                  <span className={styles.live}>🔴 LIVE</span>
+                  <span className={styles.live}>● LIVE</span>
                 </a>
               </Link>
             ))}
